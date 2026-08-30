@@ -13,7 +13,10 @@ from approvo.errors import (
     SignatureInvalid,
 )
 from approvo.models import DECISION_PAYLOAD_TYPE, Decision
-from tests.conftest import T_LATER, WINDOW_END
+
+# kept in step with tests/conftest.py
+T_LATER = "2026-08-30T13:00:00.000Z"
+WINDOW_END = "2026-09-06T12:00:00.000Z"
 
 pytestmark = pytest.mark.asyncio
 
