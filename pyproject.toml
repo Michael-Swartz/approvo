@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "approvo"
+version = "0.1.0"
+description = "Auditable, tamper-evident, idempotent approvals — built for software releases, usable for anything."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [{ name = "Michael Swartz", email = "mswartz91095@outlook.com" }]
+keywords = ["approvals", "audit", "tamper-evident", "signing", "release-management", "merkle", "dsse"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Security :: Cryptography",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = ["cryptography>=42.0"]
+
+[project.optional-dependencies]
+# approvo ships no database adapters — you implement approvo.stores.base
+# against your own datastore and prove it with approvo.testing. That suite
+# needs pytest + pytest-asyncio, hence the `dev` extra.
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "pytest-cov", "ruff"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]"]
+
+[project.urls]
+Homepage = "https://github.com/Michael-Swartz/approvo"
+Documentation = "https://michael-swartz.github.io/approvo/"
+Issues = "https://github.com/Michael-Swartz/approvo/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/approvo"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

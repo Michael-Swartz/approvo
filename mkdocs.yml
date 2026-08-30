@@ -1,0 +1,66 @@
+site_name: approvo
+site_description: Auditable, tamper-evident, idempotent approvals — a library.
+site_url: https://michael-swartz.github.io/approvo/
+repo_url: https://github.com/Michael-Swartz/approvo
+repo_name: Michael-Swartz/approvo
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.footer
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Concepts: concepts.md
+  - Policies: policies.md
+  - Storage: storage.md
+  - Verification: verification.md
+  - Security model: security.md
+  - Architecture decisions:
+      - Overview: adr/index.md
+      - "0001 — Content-addressed requests": adr/0001-content-addressed-requests.md
+      - "0002 — DSSE + Ed25519 detached signing": adr/0002-dsse-ed25519-detached-signing.md
+      - "0003 — Hash chain + Merkle checkpoints": adr/0003-hash-chain-merkle-checkpoints.md
+      - "0004 — Datastore-agnostic, no adapters": adr/0004-datastore-agnostic.md
+      - "0005 — Declarative policy engine": adr/0005-declarative-policy-engine.md
+      - "0006 — Canonical JSON serialization": adr/0006-canonical-json.md
+      - "0007 — Reserve-then-complete idempotency": adr/0007-idempotency.md
+      - "0008 — One hash chain per log": adr/0008-one-chain-per-log.md
+      - "0009 — Projections are never authoritative": adr/0009-projections-not-authoritative.md
