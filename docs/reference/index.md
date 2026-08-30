@@ -1,0 +1,56 @@
+# API reference
+
+Generated from docstrings. Everything importable from the top-level
+`approvo` package is considered public and follows
+[SemVer](https://semver.org/); submodule internals may change in a minor
+release.
+
+| Page | Contents |
+|---|---|
+| [ApprovalService](service.md) | The main entry point — requests, decisions, reads, checkpoints, verification |
+| [Data models](models.md) | `ApprovalRequest`, `Decision`, `LedgerEntry`, `Checkpoint`, `Record`, `RequestView`, query/paging types |
+| [Stores](stores.md) | The three storage protocols, `Reservation`, and the in-memory reference implementations |
+| [Crypto & keys](crypto.md) | `Signer`, `Ed25519Signer`, `KeyRef`, `KeyDirectory`, DSSE envelope helpers |
+| [Policy](policy.md) | `Policy`, `PolicyResult`, `evaluate`, `PolicyStore` |
+| [Ledger internals](ledger.md) | Hash-chain and Merkle primitives, checkpoint build/sign/verify |
+| [Errors](errors.md) | The exception hierarchy and suggested HTTP mapping |
+
+## Top-level imports
+
+```python
+from approvo import (
+    # service
+    ApprovalService, new_nonce,
+    # models
+    ApprovalRequest, Decision, LedgerEntry, Checkpoint, Record,
+    RequestView, RequestQuery, Page, DecisionChallenge,
+    PolicyResult, Check, VerificationReport,
+    # crypto
+    Ed25519Signer, Signer, KeyRef, KeyDirectory,
+    wrap, unwrap_payload, pae, verify_envelope,
+    # policy
+    Policy, PolicyStore, InMemoryPolicyStore,
+    # ledger primitives
+    next_entry, verify_segment, merkle_root, inclusion_proof,
+    verify_inclusion, build_checkpoint, sign_checkpoint,
+    verify_checkpoint, verify_consistency,
+    # store protocols
+    EventStore, ProjectionStore, IdempotencyStore, Reservation,
+    NullProjectionStore,
+    # time
+    Clock, SystemClock, FixedClock, to_rfc3339, parse_rfc3339,
+    # canonical
+    canonical_bytes, canonical_hash,
+    # errors
+    ApprovoError, RequestNotFound, SignatureInvalid, PolicyMismatch,
+    IdempotencyConflict, LedgerConflict, ConcurrencyExhausted,
+    ChallengeExpired, LedgerTampered, VerificationFailed, StoreError,
+)
+from approvo.stores import (
+    MemoryEventStore, MemoryProjectionStore, MemoryIdempotencyStore,
+)
+from approvo.testing import (
+    EventStoreConformance, ProjectionStoreConformance,
+    IdempotencyStoreConformance,
+)
+```

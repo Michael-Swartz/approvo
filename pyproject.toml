@@ -26,7 +26,7 @@ dependencies = ["cryptography>=42.0"]
 # against your own datastore and prove it with approvo.testing. That suite
 # needs pytest + pytest-asyncio, hence the `dev` extra.
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "pytest-cov", "ruff"]
-docs = ["mkdocs-material>=9.5", "mkdocstrings[python]"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
 
 [project.urls]
 Homepage = "https://github.com/Michael-Swartz/approvo"

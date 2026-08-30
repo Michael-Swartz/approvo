@@ -43,15 +43,28 @@ adapters** — [ADR-0004](adr/0004-datastore-agnostic.md) explains why.
 
 ## Start here
 
-- **[Getting started](getting-started.md)** — install, approve a release,
-  gate a deploy.
+- **[Installation](installation.md)** — `pip install approvo`, one
+  dependency, Python ≥ 3.11.
+- **[Getting started](getting-started.md)** — approve a release, gate a
+  deploy, in one file.
 - **[Concepts](concepts.md)** — how the tamper-evidence model works,
   attack by attack.
 - **[Storage](storage.md)** — implement the store protocols against your
-  database.
+  database and validate with the conformance suite.
 - **[Security model](security.md)** — what approvo does *not* protect
   against. Read this before trusting it.
-- **[ADRs](adr/index.md)** — why it is built this way.
+- **[API reference](reference/index.md)** — every public symbol, from
+  docstrings.
+- **[FAQ](faq.md)** · **[ADRs](adr/index.md)** — common questions and the
+  reasoning behind each design choice.
+
+## Project
+
+- **Source:** [github.com/Michael-Swartz/approvo](https://github.com/Michael-Swartz/approvo)
+- **License:** Apache-2.0
+- **Status:** alpha — the wire format is versioned by `schema` strings and
+  covered by golden tests, but the API may still shift before 1.0.
+- **Contributing:** see [Contributing](contributing.md).
 
 ## Design lineage
 
