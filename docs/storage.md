@@ -195,3 +195,12 @@ db.approvo_ledger.createIndex({ log_id: 1, event_type: 1, seq: -1 })
 
 Map `DuplicateKeyError` / `UniqueViolationError` → `LedgerConflict` in
 your `append`.
+
+## Runnable example
+
+A complete MongoDB implementation of all three stores — plus a FastAPI
+service and a scripted end-to-end walkthrough — lives in
+[`examples/vehicle-release-approvals/`](https://github.com/Michael-Swartz/approvo/tree/main/examples/vehicle-release-approvals)
+in the repository. It passes the conformance suite above against a real
+`mongod` and is a good starting point for adapting to your own datastore.
+

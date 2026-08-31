@@ -1,0 +1,12 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: approvo-vehicle-releases-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - approvo_vehicle_releases_mongo_data:/data/db
+
+volumes:
+  approvo_vehicle_releases_mongo_data:

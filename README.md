@@ -228,6 +228,16 @@ If the conformance suite passes against your store, approvo's guarantees
 hold on your datastore. See
 [Storage](https://michael-swartz.github.io/approvo/storage/).
 
+## Example: FastAPI + MongoDB
+
+A complete, runnable service — approving vehicle software (ECU firmware)
+releases, gated on sign-off from a safety engineer and QA — lives in
+[`examples/vehicle-release-approvals/`](examples/vehicle-release-approvals/).
+It implements the three storage protocols over MongoDB, wires them into a
+small FastAPI backend-for-frontend, and includes a scripted end-to-end
+walkthrough plus a `docker-compose.yml` for MongoDB (the app itself runs
+locally with plain Python).
+
 ## What tamper-evidence means here
 
 Edit any recorded byte and `verify()` fails, precisely:
@@ -255,6 +265,7 @@ Full docs: **<https://michael-swartz.github.io/approvo/>**
 - [Verification](https://michael-swartz.github.io/approvo/verification/)
 - [Security model](https://michael-swartz.github.io/approvo/security/)
 - [Architecture Decision Records](https://michael-swartz.github.io/approvo/adr/)
+- [Example: FastAPI + MongoDB](examples/vehicle-release-approvals/) — a runnable vehicle-software-release approval service
 
 ## Prior art
 
