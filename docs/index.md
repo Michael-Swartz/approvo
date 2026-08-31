@@ -3,9 +3,9 @@
 **Auditable, tamper-evident, idempotent approvals — built for software
 releases, usable for anything.**
 
-approvo is a **library**. No server, no daemon, no database of its own,
-no CLI for running approvals. You call it from your
-backend-for-frontend; it gives you approvals that can be
+approvo is a **library** that turns "I approved this" into a tamper-evident,
+cryptographically verifiable fact. Embed it in your backend-for-frontend and
+give every approval a signed, auditable record that can be
 **cryptographically re-verified later** — on a laptop, with no access to
 your infrastructure and no trust in whoever operated it.
 
