@@ -26,7 +26,7 @@ python -m venv .venv
   `to_dict` shape, bump the relevant `schema` string and update the
   golden vectors in `tests/test_canonical.py` on purpose.
 - **Every store-protocol invariant needs a conformance test** in
-  `approvo/testing.py`.
+  `src/approvo/testing.py` (`approvo.testing`).
 - `ruff check src/ tests/` and `pytest` must pass. `mkdocs build
   --strict` must pass if you touched docs.
 

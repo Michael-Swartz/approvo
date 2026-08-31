@@ -10,7 +10,8 @@ checkpoint**, `verify()` detects all of the following no matter what
 happens to the ledger storage:
 
 1. **Forged approvals** — a decision counts only if its DSSE envelope
-   verifies against a key registered to the claimed approver, valid at the
+   verifies against either a key registered to the claimed approver or an
+   authorized `decision_issuer` key for this `log_id`, valid at the
    decision's timestamp.
 2. **Content swaps** — decisions bind to `context_digest`; change a byte
    of the request and every approval stops counting.
@@ -41,10 +42,12 @@ happens to the ledger storage:
 - **A dishonest verifier.** Run `verify()` on infrastructure the ledger
   operator does not control, with an out-of-band key directory and a
   pinned checkpoint.
-- **Server-side signing key custody.** `submit_decision` has your BFF hold
-  the approver's key; a compromised BFF can then forge approvals. Use
-  `prepare_decision` + `submit_signed_decision` for anything that gates
-  production.
+- **Server-side / custodial signing key custody.** `submit_decision` has
+  your backend hold the signing key — either a per-person key or, with a
+  `SigningService`, one org `decision_issuer` key that signs for everyone.
+  Either way a compromised backend can forge approvals for known
+  identities. Use `prepare_decision` + `submit_signed_decision` for
+  anything that gates production.
 
 ## Operational checklist
 
