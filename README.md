@@ -79,7 +79,7 @@ casey, jordan, log_key = (Ed25519Signer.generate() for _ in range(3))
 keys = KeyDirectory()
 keys.add(casey.public_key_ref("user:casey", not_before=now))
 keys.add(jordan.public_key_ref("user:jordan", not_before=now))
-keys.add(log_key.public_key_ref("log:main", not_before=now))
+keys.add(log_key.public_key_ref("log:main", not_before=now, key_use="log"))
 
 svc = ApprovalService(
     events=MemoryEventStore(log_id="releases"),

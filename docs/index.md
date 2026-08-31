@@ -10,7 +10,7 @@ give every approval a signed, auditable record that can be
 your infrastructure and no trust in whoever operated it.
 
 A "yes" in approvo is not a row someone could edit. It is an
-Ed25519-signed statement, bound to the exact content that was approved,
+signature-verified statement, bound to the exact content that was approved,
 chained into an append-only ledger whose integrity anyone can check.
 
 ## Where it sits
@@ -28,7 +28,7 @@ transaction. See [Storage](storage.md) for what you implement and why.
 
 | Guarantee | Mechanism |
 |---|---|
-| Non-repudiation | Every decision is an Ed25519-signed [DSSE envelope](https://github.com/secure-systems-lab/dsse) |
+| Non-repudiation | Every decision is a signed [DSSE envelope](https://github.com/secure-systems-lab/dsse) |
 | Server can't forge approvals | Detached signing — the approver's client signs, your BFF relays |
 | No bait-and-switch | Each decision embeds the hash of the exact request the approver saw |
 | Tamper-evidence | Hash-chained append-only ledger + signed Merkle checkpoints |

@@ -27,8 +27,9 @@ people said yes, provably". Releases are the design target, not the limit.
 If you use the [detached signing ceremony](getting-started.md#detached-signing-recommended-for-production)
 (`prepare_decision` + `submit_signed_decision`), the approver's private
 key never reaches your backend. The server produces the bytes to sign and
-only ever handles a signature and a public key, so a fully compromised
-backend still cannot manufacture a valid approval.
+only ever handles the signature plus the already-registered key material in
+your `KeyDirectory`, so a fully compromised backend still cannot
+manufacture a valid approval.
 
 `submit_decision` (server-side signing) is offered for internal tooling
 where that trade-off is acceptable, and its risk is documented.

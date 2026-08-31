@@ -19,9 +19,9 @@ Small keys and signatures, fast, no parameter choices to get wrong, no
 RNG dependence at signing time, ubiquitous library support. `cryptography`
 provides it; that is approvo's only runtime dependency.
 
-Other schemes (ECDSA P-256, RSA) are accommodated by the `KeyRef.scheme`
-field and the `Signer` protocol, but Ed25519 is the shipped and
-documented path.
+Other schemes (ECDSA P-256/P-384, RSA-PSS/PKCS1) are accommodated by the
+`KeyRef.scheme` field and the `Signer` protocol; Ed25519 remains the
+simplest local-signer path.
 
 ### Envelope: DSSE
 
@@ -47,7 +47,8 @@ Two APIs:
 - `prepare_decision(...) -> DecisionChallenge`, then
   `submit_signed_decision(envelope)` — the service produces the exact
   bytes to sign (`challenge.pae_b64`); the approver's client signs; the
-  service only ever handles a signature and a public key. A fully
+  service only ever handles the signature bytes and the already-registered
+  public key. A fully
   compromised BFF still cannot forge an approval.
 
 `submit_signed_decision` re-derives and re-verifies everything from the

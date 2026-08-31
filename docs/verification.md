@@ -27,14 +27,16 @@ if not report.ok:
    `trusted_checkpoint`): the current log's first `tree_size` leaves
    reproduce the pinned root — i.e. the log is an *extension* of what you
    trusted, not a rewrite.
-4. **Every decision**: its DSSE signature verifies for the approver it
-   names, using a key valid at `decided_at`, and its `context_digest`
-   matches the request it points at.
+4. **Every decision**: its DSSE signature is authorized for the approver it
+   names — either by that approver's own key or by a `decision_issuer` key
+   scoped to this `log_id` — using a key valid at `decided_at`, and its
+   `context_digest` matches the request it points at.
 5. **Every request's status is reproducible**: re-running the policy
    engine yields the status recorded in the last `status.changed` event
-   (allowing for `expired`, since windows close with the passage of time).
-   If the policy set is not available (verifying with only a key
-   directory), this check is reported as skipped rather than passed.
+   (or, for a still-pending request, the absence of one), allowing for
+   `expired` since windows close with the passage of time. If the policy
+   set is not available (verifying with only a key directory), this check
+   is reported as skipped rather than passed.
 
 ## Incremental verification
 
@@ -76,7 +78,7 @@ of your database as a list of rows, load them into the in-memory store
 without re-chaining and verify:
 
 ```python
-from approvo import ApprovalService, KeyDirectory
+from approvo import ApprovalService, InMemoryPolicyStore, KeyDirectory, LedgerEntry
 from approvo.stores import MemoryEventStore
 
 entries = [LedgerEntry.from_dict(row) for row in exported_rows]

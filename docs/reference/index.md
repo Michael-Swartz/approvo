@@ -23,13 +23,14 @@ from approvo import (
     # service
     ApprovalService, new_nonce,
     # models
-    ApprovalRequest, Decision, LedgerEntry, Checkpoint, Record,
+    ApprovalRequest, Decision, Identity, LedgerEntry, Checkpoint, Record,
     RequestView, RequestQuery, Page, DecisionChallenge,
     PolicyResult, Check, VerificationReport,
     # crypto
     Ed25519Signer, Signer, KeyRef, KeyDirectory, PublicKeyMaterial,
     wrap, wrap_async, unwrap_payload, pae, verify_envelope,
-    verified_signatures, decision_authorized, sign_with, public_key_ref,
+    verified_signatures, VerifiedSignature, decision_authorized,
+    sign_with, public_key_ref, KEY_USES,
     # signing back ends
     KeyProvider, InMemoryKeyProvider, LocalFileKeyProvider, EnvKeyProvider,
     CompositeKeyProvider, KeyDescriptor, parse_key_ref,
@@ -40,7 +41,7 @@ from approvo import (
     # ledger primitives
     next_entry, verify_segment, merkle_root, inclusion_proof,
     verify_inclusion, build_checkpoint, sign_checkpoint,
-    verify_checkpoint, verify_consistency,
+    sign_checkpoint_async, verify_checkpoint, verify_consistency,
     # store protocols
     EventStore, ProjectionStore, IdempotencyStore, Reservation,
     NullProjectionStore,
@@ -48,6 +49,10 @@ from approvo import (
     Clock, SystemClock, FixedClock, to_rfc3339, parse_rfc3339,
     # canonical
     canonical_bytes, canonical_hash,
+    # projection helpers
+    build_view, eligible_approvers,
+    # test helpers
+    testing,
     # errors
     ApprovoError, RequestNotFound, SignatureInvalid, PolicyMismatch,
     IdempotencyConflict, LedgerConflict, ConcurrencyExhausted,

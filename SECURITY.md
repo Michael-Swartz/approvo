@@ -7,8 +7,9 @@ externally **pinned checkpoint**, `ApprovalService.verify()` detects all
 of the following — regardless of what happens to the ledger storage:
 
 1. **Forged approvals.** A decision counts only if its DSSE envelope
-   verifies against a key registered to the claimed approver that was
-   valid (not before / after / revoked) at the decision's timestamp.
+   verifies against either a key registered to the claimed approver or an
+   authorized `decision_issuer` key for that log, valid (not before /
+   after / revoked) at the decision's timestamp.
 2. **Content swaps.** Decisions bind to `context_digest` — the canonical
    hash of the full request body the approver saw. Change one byte of the
    subject and every existing approval stops counting.
