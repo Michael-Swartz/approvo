@@ -22,11 +22,7 @@ Your BFF  ──▶  approvo  ──▶  your datastore (you implement 3 protoco
 ```
 
 approvo never opens a connection, runs a migration, or owns a
-transaction. It defines three small async protocols
-([Storage](storage.md)) that you implement over the database you already
-run, and a [conformance suite](storage.md#the-conformance-suite) that
-proves your implementation correct. There are **no bundled database
-adapters** — [ADR-0004](adr/0004-datastore-agnostic.md) explains why.
+transaction. See [Storage](storage.md) for what you implement and why.
 
 ## The guarantees
 

@@ -11,12 +11,9 @@ and the datastore connection; approvo is the logic in between.
 
 Because a bundled adapter would fight your migration tool, your
 connection pool, and your transaction boundaries — and it would rot,
-because the maintainers don't run every database in anger. Instead approvo
-ships three small protocols and a
-[conformance suite](storage.md#the-conformance-suite) that is the
-executable specification of those protocols. You implement ~150 lines
-against your database and the suite tells you it's correct. See
-[ADR-0004](adr/0004-datastore-agnostic.md).
+because the maintainers don't run every database in anger. See
+[Storage](storage.md) for what you implement instead, or
+[ADR-0004](adr/0004-datastore-agnostic.md) for the full reasoning.
 
 ### Can I use it for things that aren't software releases?
 
