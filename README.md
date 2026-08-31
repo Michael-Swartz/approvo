@@ -7,9 +7,11 @@ releases, usable for anything.**
 [![Docs](https://img.shields.io/badge/docs-github%20pages-blue)](https://michael-swartz.github.io/approvo/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
-approvo is a **library**. It has no server, no CLI for running approvals,
-no database of its own. You call it from your backend-for-frontend; it
-gives you approvals that can be **cryptographically re-verified later**.
+approvo is a **library** that turns "I approved this" into a tamper-evident,
+cryptographically verifiable fact. Embed it in your backend-for-frontend
+and give every approval a signed, auditable record that can be
+**re-verified later** — on a laptop, by anyone, without access to your
+infrastructure.
 
 A "yes" in approvo is not a row someone could edit. It is an
 Ed25519-signed statement, bound to the exact content that was approved,
