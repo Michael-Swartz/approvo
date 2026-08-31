@@ -166,8 +166,8 @@ async def submit_decision(
     approver's identity is only whatever the request body claims. A
     production deployment should keep signing keys on the approver's own
     device and use ``prepare_decision`` / ``submit_signed_decision``
-    instead — see ``docs/getting-started.md`` in the main repo and
-    ``scripts/demo.py`` in this example for that detached-signing flow.
+    instead — see the "Detached signing" section of
+    ``docs/getting-started.md`` in the main repo for that ceremony.
     """
     bootstrap = app.state.bootstrap
     signer = bootstrap.signers.get(body.approver_id)
