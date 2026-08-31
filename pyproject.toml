@@ -27,6 +27,11 @@ dependencies = ["cryptography>=42.0"]
 # needs pytest + pytest-asyncio, hence the `dev` extra.
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "pytest-cov", "ruff"]
 docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+# Optional KMS/HSM signing back ends (approvo.providers.*). Core needs none
+# of these; each module imports its SDK lazily.
+gcpkms = ["google-cloud-kms>=2.20"]
+awskms = ["aioboto3>=12.0"]
+vault = ["hvac>=2.0"]
 
 [project.urls]
 Homepage = "https://github.com/Michael-Swartz/approvo"

@@ -25,6 +25,21 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Reserve-then-complete idempotency (ADR-0007).
 - One hash chain per `log_id` (ADR-0008).
 - Rebuildable, non-authoritative projections (ADR-0009).
+- **KMS-agnostic signing.** `Signer.sign` may be async; new
+  `approvo.crypto.algorithms` scheme registry (Ed25519, ECDSA P-256/P-384,
+  RSA-PSS/PKCS1); `KeyProvider` interface with local `memory://` /
+  `file://` / `env://` providers and a `CompositeKeyProvider`; optional
+  `approvo.providers.gcpkms` / `.awskms` / `.vault` back ends behind
+  extras; `KeyProviderConformance` suite (ADR-0010).
+- **Org-level / custodial signing.** `KeyResolver` (`StaticKeyResolver`,
+  `TemplateKeyResolver`) + `SigningService`; `ApprovalService(signing=…)`
+  so `submit_decision` needs no per-call `signer=` and `checkpoint()`
+  needs no `log_signer` (ADR-0011).
+- **Custodial attribution.** `KeyRef.key_use`
+  (`approver` / `decision_issuer` / `log` / `oidc_issuer`) + `log_ids`
+  scoping; signed optional `Decision.authn`; `decision_authorized` /
+  `verified_signatures`; checkpoints now require a `log`-use key
+  (ADR-0012).
 
 See the [Architecture Decision Records](https://michael-swartz.github.io/approvo/adr/)
 for the reasoning behind each.

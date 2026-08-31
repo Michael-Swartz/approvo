@@ -15,6 +15,9 @@ choice, and the consequences we accepted. They are immutable once
 | [0007](0007-idempotency.md) | Reserve-then-complete idempotency for mutations | Accepted |
 | [0008](0008-one-chain-per-log.md) | One hash chain per `log_id`; partition to scale writes | Accepted |
 | [0009](0009-projections-not-authoritative.md) | Projections are rebuildable and never gate a decision | Accepted |
+| [0010](0010-key-provider-interface.md) | KMS-agnostic `KeyProvider`; no bundled KMS in core | Accepted |
+| [0011](0011-key-resolver-org-signing.md) | `KeyResolver` + `SigningService` for org-level signing | Accepted |
+| [0012](0012-custodial-attribution.md) | Custodial attribution & the `decision_issuer` verify rule | Accepted |
 
 ## Reference implementations we studied
 

@@ -72,6 +72,7 @@ nav:
   - Getting started: getting-started.md
   - Concepts: concepts.md
   - Policies: policies.md
+  - Signing: signing.md
   - Storage: storage.md
   - Verification: verification.md
   - Security model: security.md
@@ -82,6 +83,7 @@ nav:
       - Data models: reference/models.md
       - Stores: reference/stores.md
       - Crypto & keys: reference/crypto.md
+      - Signing back ends: reference/signing.md
       - Policy: reference/policy.md
       - Ledger internals: reference/ledger.md
       - Errors: reference/errors.md
@@ -96,5 +98,8 @@ nav:
       - "0007 — Reserve-then-complete idempotency": adr/0007-idempotency.md
       - "0008 — One hash chain per log": adr/0008-one-chain-per-log.md
       - "0009 — Projections are never authoritative": adr/0009-projections-not-authoritative.md
+      - "0010 — KMS-agnostic KeyProvider": adr/0010-key-provider-interface.md
+      - "0011 — KeyResolver & org-level signing": adr/0011-key-resolver-org-signing.md
+      - "0012 — Custodial attribution": adr/0012-custodial-attribution.md
   - Contributing: contributing.md
   - Changelog: changelog.md

@@ -89,6 +89,24 @@ class StoreError(ApprovoError):
     """The underlying datastore failed. Wraps driver exceptions."""
 
 
+class SigningError(ApprovoError):
+    """A signing backend failed to produce a signature."""
+
+
+class KeyProviderError(SigningError):
+    """A :class:`~approvo.crypto.keyprovider.KeyProvider` could not resolve or
+    load a key. Wraps KMS / Vault / filesystem driver exceptions."""
+
+
+class KeyResolutionError(SigningError):
+    """A :class:`~approvo.crypto.resolver.KeyResolver` produced no key
+    reference for the given signing context."""
+
+
+class UnsupportedAlgorithmError(SigningError):
+    """The signature scheme on a key or signer is not in the registry."""
+
+
 class LedgerTampered(ApprovoError):
     """The ledger failed integrity verification. Always an incident."""
 

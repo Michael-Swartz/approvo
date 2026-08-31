@@ -41,15 +41,17 @@ from .canonical import ZERO_HASH, canonical_bytes, canonical_hash
 from .chain import next_entry, verify_segment
 from .checkpoint import (
     build_checkpoint,
-    sign_checkpoint,
+    sign_checkpoint_async,
     verify_checkpoint,
     verify_consistency,
 )
 from .clock import Clock, SystemClock, parse_rfc3339, to_rfc3339
-from .crypto.envelope import pae, unwrap_payload, wrap
+from .crypto.envelope import pae, unwrap_payload, wrap_async
 from .crypto.keys import KeyDirectory
+from .crypto.resolver import SigningContext, SigningPurpose
 from .crypto.signer import Signer
-from .crypto.verifier import verify_envelope
+from .crypto.signing import SigningService
+from .crypto.verifier import decision_authorized, verify_envelope
 from .errors import (
     ChallengeExpired,
     ConcurrencyExhausted,
@@ -96,6 +98,7 @@ class ApprovalService:
         projections: ProjectionStore | None = None,
         idempotency: IdempotencyStore | None = None,
         clock: Clock | None = None,
+        signing: SigningService | None = None,
         log_signer: Signer | None = None,
         append_attempts: int = DEFAULT_APPEND_ATTEMPTS,
         challenge_ttl: timedelta = DEFAULT_CHALLENGE_TTL,
@@ -108,10 +111,19 @@ class ApprovalService:
         self.projections = projections or NullProjectionStore()
         self.idempotency = idempotency
         self.clock = clock or SystemClock()
+        # `signing` resolves org/custodial keys from a KMS-agnostic backend;
+        # `log_signer` is a bare Signer for the checkpoint key. Provide one
+        # or the other (or pass an explicit signer to submit_decision).
+        self.signing = signing
         self.log_signer = log_signer
         self.append_attempts = append_attempts
         self.challenge_ttl = challenge_ttl
         self.max_clock_skew = max_clock_skew
+
+    def _identity_known(self, approver_id: str) -> bool:
+        """Whether we can vouch for *approver_id*. An empty roster (export
+        verification) means "cannot check" rather than "unknown"."""
+        return not self.identities or approver_id in self.identities
 
     # ------------------------------------------------------------------ #
     # Requests
@@ -171,16 +183,22 @@ class ApprovalService:
         request_id: str,
         approver_id: str,
         verdict: Verdict,
-        signer: Signer,
+        signer: Signer | None = None,
         comment: str = "",
         idempotency_key: str = "",
+        authn: dict | None = None,
     ) -> Record:
-        """Sign and record a decision in one call.
+        """Sign and record a decision in one call (server-side signing).
 
-        The service holds the signing key. Convenient for internal tools;
-        for production gates prefer :meth:`prepare_decision` +
-        :meth:`submit_signed_decision`, which keeps signing authority out
-        of your backend entirely.
+        The signature comes from, in order: an explicit *signer* argument;
+        otherwise the injected :class:`~approvo.crypto.signing.SigningService`
+        (org/custodial key resolved for this log). Convenient for internal
+        tools — but the backend holds signing authority, so for production
+        gates prefer :meth:`prepare_decision` + :meth:`submit_signed_decision`.
+
+        When a custodial ``decision_issuer`` key signs, pass *authn* —
+        evidence you authenticated *approver_id* (see ADR-0012). It is
+        bound into the signature and recorded for audit.
         """
         request = await self._require_request(request_id)
         decided_at = self.clock.now()
@@ -192,8 +210,26 @@ class ApprovalService:
             decided_at=decided_at,
             comment=comment,
             idempotency_key=idempotency_key or f"{request_id}:{approver_id}:{verdict}",
+            authn=authn,
         )
-        envelope = wrap(decision.to_dict(), DECISION_PAYLOAD_TYPE, [signer])
+        if signer is not None:
+            envelope = await wrap_async(decision.to_dict(), DECISION_PAYLOAD_TYPE, [signer])
+        elif self.signing is not None:
+            envelope = await self.signing.sign_decision(
+                decision,
+                ctx=SigningContext(
+                    log_id=self.events.log_id,
+                    purpose=SigningPurpose.DECISION,
+                    kind=request.kind,
+                    policy_id=request.policy_id,
+                    approver_id=approver_id,
+                ),
+            )
+        else:
+            raise SignatureInvalid(
+                "submit_decision needs a `signer=` argument or a SigningService "
+                "(`signing=`) on the ApprovalService"
+            )
         return await self.submit_signed_decision(envelope)
 
     # ------------------------------------------------------------------ #
@@ -286,12 +322,18 @@ class ApprovalService:
                 f"approval window for {request.request_id} closed at {request.not_valid_after}"
             )
 
-        if decision.approver_id not in verify_envelope(
-            envelope, self.key_dir, at_time=decision.decided_at
+        if not decision_authorized(
+            envelope,
+            approver_id=decision.approver_id,
+            log_id=self.events.log_id,
+            key_dir=self.key_dir,
+            at_time=decision.decided_at,
+            known_identity=self._identity_known(decision.approver_id),
         ):
             raise SignatureInvalid(
-                f"no valid signature for {decision.approver_id!r} "
-                f"with a key valid at {decision.decided_at}"
+                f"decision for {decision.approver_id!r} is not signed by that approver's "
+                f"key or by an authorized decision-issuer key for log "
+                f"{self.events.log_id!r} valid at {decision.decided_at}"
             )
 
         key = decision.idempotency_key or (
@@ -391,17 +433,26 @@ class ApprovalService:
     # ------------------------------------------------------------------ #
 
     async def checkpoint(self) -> Checkpoint:
-        """Publish a signed tree head over the current log."""
-        if self.log_signer is None:
-            raise SignatureInvalid("no log_signer configured for checkpointing")
+        """Publish a signed tree head over the current log.
+
+        Signed by the injected :class:`~approvo.crypto.signing.SigningService`
+        (checkpoint key resolved for this log) or, failing that, by
+        ``log_signer``.
+        """
         leaves = await self.events.leaf_hashes()
         previous = await self.events.latest_checkpoint()
-        cp = sign_checkpoint(
-            build_checkpoint(
-                leaves, log_id=self.events.log_id, at_time=self.clock.now(), prev=previous
-            ),
-            self.log_signer,
+        unsigned = build_checkpoint(
+            leaves, log_id=self.events.log_id, at_time=self.clock.now(), prev=previous
         )
+        if self.signing is not None:
+            cp = await self.signing.sign_checkpoint(unsigned)
+        elif self.log_signer is not None:
+            cp = await sign_checkpoint_async(unsigned, self.log_signer)
+        else:
+            raise SignatureInvalid(
+                "checkpoint() needs a SigningService (`signing=`) or a `log_signer=` "
+                "on the ApprovalService"
+            )
         await self._append("checkpoint.published", cp.to_dict(), at_time=cp.published_at)
         return cp
 
@@ -481,10 +532,23 @@ class ApprovalService:
                 decision.context_digest == request.context_digest(),
                 f"decision by {decision.approver_id} bound to {_short(decision.request_id)}",
             )
+            signers = verify_envelope(envelope, self.key_dir, at_time=decision.decided_at)
+            authorized = decision_authorized(
+                envelope,
+                approver_id=decision.approver_id,
+                log_id=self.events.log_id,
+                key_dir=self.key_dir,
+                at_time=decision.decided_at,
+                known_identity=self._identity_known(decision.approver_id),
+            )
+            via = (
+                "own key"
+                if decision.approver_id in signers
+                else "decision-issuer key"
+            )
             check(
-                decision.approver_id
-                in verify_envelope(envelope, self.key_dir, at_time=decision.decided_at),
-                f"decision by {decision.approver_id} carries a valid signature",
+                authorized,
+                f"decision by {decision.approver_id} carries a valid signature ({via})",
             )
 
         # 5. Recorded status transitions reproduce from the evidence.
@@ -559,14 +623,20 @@ class ApprovalService:
         return request
 
     async def _decisions_for(self, request: ApprovalRequest) -> list[Decision]:
-        """Decisions whose envelope verifies for the approver they name."""
+        """Decisions whose envelope is authorized for the approver they name
+        (the approver's own key, or a decision-issuer key for this log)."""
         out: list[Decision] = []
         for entry in await self.events.events_for_request(request.request_id):
             if entry.event_type != "decision.recorded":
                 continue
             decision = Decision.from_dict(unwrap_payload(entry.payload))
-            if decision.approver_id in verify_envelope(
-                entry.payload, self.key_dir, at_time=decision.decided_at
+            if decision_authorized(
+                entry.payload,
+                approver_id=decision.approver_id,
+                log_id=self.events.log_id,
+                key_dir=self.key_dir,
+                at_time=decision.decided_at,
+                known_identity=self._identity_known(decision.approver_id),
             ):
                 out.append(decision)
         return out

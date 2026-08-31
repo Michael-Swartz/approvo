@@ -37,7 +37,12 @@ def signers() -> dict[str, Ed25519Signer]:
 def key_dir(signers) -> KeyDirectory:
     kd = KeyDirectory()
     for owner, signer in signers.items():
-        kd.add(signer.public_key_ref(owner, not_before="2026-01-01T00:00:00.000Z"))
+        key_use = "log" if owner == "log:main" else "approver"
+        kd.add(
+            signer.public_key_ref(
+                owner, not_before="2026-01-01T00:00:00.000Z", key_use=key_use
+            )
+        )
     return kd
 
 

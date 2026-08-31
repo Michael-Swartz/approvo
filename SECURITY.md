@@ -36,10 +36,16 @@ Be honest with yourself about these before relying on it.
   human intent. Use short validity windows and revocation (`revoked_at`
   invalidates only signatures dated *after* revocation). For detached
   signing, keep client keys in an HSM or platform keystore.
-- **Server-side signing key custody.** `submit_decision` has your backend
-  hold the approver's key, so a compromised backend can forge approvals.
-  Use `prepare_decision` + `submit_signed_decision` (detached signing) for
-  anything that gates production.
+- **Server-side / custodial signing key custody.** `submit_decision` has
+  your backend hold the signing key — a per-person key, or (with a
+  `SigningService`) one org `decision_issuer` key that signs for everyone.
+  Either way a compromised backend can forge approvals for known
+  identities. Mitigate: keep the key in a KMS/HSM with tight IAM and
+  audit logging, scope it with `KeyRef.log_ids`, and record `Decision.authn`
+  so approvals can be cross-checked against your IdP. For anything that
+  gates production, use per-person keys or `prepare_decision` +
+  `submit_signed_decision` (detached signing), where the private key never
+  reaches your backend.
 - **Trusted time.** Timestamps come from the injected `Clock`. A malicious
   operator colluding with a key holder could backdate a decision. An
   RFC 3161 timestamp source is a planned extension; until then, frequent

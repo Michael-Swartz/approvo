@@ -132,6 +132,49 @@ await svc.checkpoint()
 
 Full walkthrough: **[Getting started](https://michael-swartz.github.io/approvo/getting-started/)**.
 
+## Signing: three ways, one ledger
+
+| Approach | Who holds the key | Server can forge? |
+|---|---|---|
+| Detached ceremony (`prepare_decision` + `submit_signed_decision`) | the approver's client | no |
+| Per-person `Signer` (`submit_decision(signer=…)`) | wherever you keep it | only if that store is compromised |
+| **Org / custodial** (`ApprovalService(signing=…)`) | your backend, via a KMS | yes (mitigable) — no approver key management |
+
+Org-level signing decouples from any specific KMS: implement or import a
+`KeyProvider` (schemes for `gcpkms://`, `awskms://`, `vault://`, plus
+local `file://` / `env://` / `memory://`), a `KeyResolver` (which key
+signs what), and hand both to a `SigningService`:
+
+```python
+from approvo.crypto import SigningService, StaticKeyResolver, SigningPurpose, CompositeKeyProvider, LocalFileKeyProvider
+from approvo.providers.gcpkms import GcpKmsKeyProvider   # pip install 'approvo[gcpkms]'
+
+signing = SigningService(
+    CompositeKeyProvider([GcpKmsKeyProvider(), LocalFileKeyProvider(root="/etc/approvo")]),
+    StaticKeyResolver({
+        SigningPurpose.DECISION:   "gcpkms://.../cryptoKeys/org-approvals/cryptoKeyVersions/3",
+        SigningPurpose.CHECKPOINT: "gcpkms://.../cryptoKeys/org-log/cryptoKeyVersions/1",
+    }),
+)
+await signing.self_test()
+key_dir.extend(await signing.trust_from_static(
+    issuer_owner_id="svc:approvo", log_owner_id="svc:approvo-log",
+    not_before=now, log_ids=("releases",),
+))
+
+svc = ApprovalService(events=…, key_dir=key_dir, identities=…, policy_store=…, signing=signing)
+await svc.submit_decision(                        # no signer= — the org key signs
+    request_id=rid, approver_id="user:casey", verdict="approve",
+    authn={"method": "oidc", "sub": "casey", "jti": "…"},   # bound into the signature
+)
+```
+
+A custodial decision counts if a `decision_issuer` key scoped to this log
+signed it **and** the named approver is a known, eligible identity — you
+trade the approver's private key for the server's authentication. Full
+guide: **[Signing](https://michael-swartz.github.io/approvo/signing/)**.
+KMS providers are validated by `approvo.testing.KeyProviderConformance`.
+
 ## Reads: authoritative vs. projected
 
 Two read paths, and mixing them up is a security bug:

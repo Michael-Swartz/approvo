@@ -18,7 +18,8 @@ Subclass the suite and supply a fixture yielding a **fresh, empty** store::
             yield store
 
 Then just run pytest. The suites are ``EventStoreConformance``,
-``ProjectionStoreConformance``, and ``IdempotencyStoreConformance``.
+``ProjectionStoreConformance``, ``IdempotencyStoreConformance``, and
+``KeyProviderConformance`` (for KMS/HSM signing back ends).
 
 Requires ``pytest`` and ``pytest-asyncio`` (``pip install 'approvo[dev]'``).
 Tests are explicitly marked ``@pytest.mark.asyncio``, so they work whether
@@ -38,7 +39,10 @@ import pytest
 
 from .canonical import ZERO_HASH
 from .chain import next_entry
-from .errors import IdempotencyConflict, LedgerConflict
+from .crypto.algorithms import get_scheme, known_schemes
+from .crypto.keyprovider import KeyProvider
+from .crypto.signer import sign_with
+from .errors import IdempotencyConflict, KeyProviderError, LedgerConflict
 from .models import Checkpoint, LedgerEntry, RequestQuery, RequestView
 
 T0 = "2026-08-30T12:00:00.000Z"
@@ -456,3 +460,82 @@ class IdempotencyStoreConformance:
         errors = [r for r in results if isinstance(r, Exception)]
         assert not errors, f"reserve raised under concurrency: {errors}"
         assert sum(1 for r in results if r.won) == 1
+
+
+# --------------------------------------------------------------------------- #
+# KeyProvider
+# --------------------------------------------------------------------------- #
+
+
+class KeyProviderConformance:
+    """Subclass and provide two fixtures:
+
+    - ``key_provider`` — an instance of your
+      :class:`~approvo.crypto.keyprovider.KeyProvider`.
+    - ``key_ref`` — a reference string that provider can resolve to a
+      working signing key.
+
+    Example::
+
+        class TestGcpKmsProvider(KeyProviderConformance):
+            @pytest.fixture
+            def key_provider(self):
+                return GcpKmsKeyProvider()
+
+            @pytest.fixture
+            def key_ref(self):
+                return "gcpkms://projects/…/cryptoKeyVersions/1"
+    """
+
+    @pytest.mark.asyncio
+    async def test_is_a_key_provider(self, key_provider):
+        assert isinstance(key_provider, KeyProvider)
+        assert key_provider.schemes, "provider must declare at least one scheme"
+
+    @pytest.mark.asyncio
+    async def test_public_key_scheme_is_known(self, key_provider, key_ref):
+        pub = await key_provider.get_public_key(key_ref)
+        assert pub.scheme in known_schemes()
+        assert isinstance(pub.public, bytes) and pub.public
+
+    @pytest.mark.asyncio
+    async def test_public_key_is_stable(self, key_provider, key_ref):
+        a = await key_provider.get_public_key(key_ref)
+        b = await key_provider.get_public_key(key_ref)
+        assert a.public == b.public
+        assert a.keyid == b.keyid
+
+    @pytest.mark.asyncio
+    async def test_signer_is_primed(self, key_provider, key_ref):
+        signer = await key_provider.get_signer(key_ref)
+        # metadata must be available without another round trip
+        assert signer.algorithm in known_schemes()
+        assert signer.key_id() == (await key_provider.get_public_key(key_ref)).keyid
+
+    @pytest.mark.asyncio
+    async def test_sign_then_verify(self, key_provider, key_ref):
+        signer = await key_provider.get_signer(key_ref)
+        pub = signer.public_material()
+        message = b"approvo-conformance-" + b"x" * 64
+        sig, keyid = await sign_with(signer, message)
+        assert keyid == pub.keyid
+        # must verify through the same scheme registry the library uses
+        get_scheme(pub.scheme).verify(pub.public, sig, message)
+
+    @pytest.mark.asyncio
+    async def test_signature_does_not_verify_for_other_message(self, key_provider, key_ref):
+        signer = await key_provider.get_signer(key_ref)
+        pub = signer.public_material()
+        sig, _ = await sign_with(signer, b"message-one")
+        with pytest.raises(Exception):  # noqa: B017 - InvalidSignature or similar
+            get_scheme(pub.scheme).verify(pub.public, sig, b"message-two")
+
+    @pytest.mark.asyncio
+    async def test_self_test_passes(self, key_provider, key_ref):
+        await key_provider.self_test(key_ref)
+
+    @pytest.mark.asyncio
+    async def test_unknown_ref_raises_key_provider_error(self, key_provider):
+        scheme = key_provider.schemes[0]
+        with pytest.raises(KeyProviderError):
+            await key_provider.get_signer(f"{scheme}://definitely-not-a-real-key-xyz")

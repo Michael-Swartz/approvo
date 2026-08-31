@@ -122,10 +122,16 @@ class Decision:
     decided_at: str
     comment: str = ""
     idempotency_key: str = ""
+    # Evidence that the server authenticated `approver_id`, carried inside
+    # the signed payload. Required in practice when a decision_issuer
+    # (org/custodial) key signs — see ADR-0012. approvo does not interpret
+    # the contents; it binds them into the signature and surfaces them for
+    # audit. e.g. {"method": "oidc", "iss": ..., "sub": ..., "jti": ...}
+    authn: dict | None = None
     schema: str = DECISION_SCHEMA
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "schema": self.schema,
             "request_id": self.request_id,
             "context_digest": self.context_digest,
@@ -135,6 +141,9 @@ class Decision:
             "comment": self.comment,
             "idempotency_key": self.idempotency_key,
         }
+        if self.authn is not None:
+            d["authn"] = self.authn
+        return d
 
     @classmethod
     def from_dict(cls, d: dict) -> Decision:
@@ -146,6 +155,7 @@ class Decision:
             decided_at=d["decided_at"],
             comment=d.get("comment", ""),
             idempotency_key=d.get("idempotency_key", ""),
+            authn=d.get("authn"),
             schema=d.get("schema", DECISION_SCHEMA),
         )
 

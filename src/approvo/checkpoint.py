@@ -1,8 +1,8 @@
 """Signed checkpoints (signed tree heads) — pure, no I/O.
 
 A checkpoint commits to the whole log at a point in time: "as of
-``tree_size`` entries the Merkle root was ``root_hash``", signed by the
-log key.
+``tree_size`` entries the Merkle root was ``root_hash``", signed by a
+**log key** (``key_use == "log"``).
 
 Why this matters more when the ledger lives in an external database: the
 hash chain alone only proves *internal* consistency. Anyone who can
@@ -16,12 +16,12 @@ from __future__ import annotations
 import base64
 
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .canonical import canonical_bytes
+from .crypto.algorithms import get_scheme
 from .crypto.keys import KeyDirectory
-from .crypto.signer import Signer
-from .errors import CheckpointUnverified, ConsistencyFailure
+from .crypto.signer import Signer, sign_with
+from .errors import CheckpointUnverified, ConsistencyFailure, UnsupportedAlgorithmError
 from .merkle import merkle_root
 from .models import Checkpoint
 
@@ -49,33 +49,45 @@ def build_checkpoint(
     )
 
 
+def _append_sig(cp: Checkpoint, keyid: str, sig: bytes) -> Checkpoint:
+    entry = {"keyid": keyid, "sig": base64.standard_b64encode(sig).decode("ascii")}
+    return Checkpoint.from_dict({**cp.to_dict(), "signatures": [*cp.signatures, entry]})
+
+
 def sign_checkpoint(cp: Checkpoint, signer: Signer) -> Checkpoint:
-    """Return *cp* with *signer*'s signature appended."""
-    sig = {
-        "keyid": signer.key_id(),
-        "sig": base64.standard_b64encode(signer.sign(signable_bytes(cp))).decode("ascii"),
-    }
-    return Checkpoint.from_dict({**cp.to_dict(), "signatures": [*cp.signatures, sig]})
+    """Return *cp* with a synchronous *signer*'s signature appended."""
+    return _append_sig(cp, signer.key_id(), signer.sign(signable_bytes(cp)))
+
+
+async def sign_checkpoint_async(cp: Checkpoint, signer: Signer) -> Checkpoint:
+    """Like :func:`sign_checkpoint`, awaiting KMS-backed signers."""
+    sig, keyid = await sign_with(signer, signable_bytes(cp))
+    return _append_sig(cp, keyid, sig)
 
 
 def verify_checkpoint(cp: Checkpoint, key_dir: KeyDirectory) -> list[str]:
-    """Return owner ids whose signatures on *cp* verify; raise if none do."""
+    """Return owner ids whose signatures on *cp* verify; raise if none do.
+
+    Only keys with ``key_use == "log"`` scoped to ``cp.log_id`` count.
+    """
     signable = signable_bytes(cp)
     verified: list[str] = []
     for sig in cp.signatures:
         key = key_dir.get(sig.get("keyid", ""))
-        if key is None or key.scheme != "ed25519" or not key.valid_at(cp.published_at):
+        if key is None or key.key_use != "log" or not key.valid_at(cp.published_at):
+            continue
+        if not key.scoped_to(cp.log_id):
             continue
         try:
-            Ed25519PublicKey.from_public_bytes(key.public_bytes()).verify(
-                base64.standard_b64decode(sig["sig"]), signable
+            get_scheme(key.scheme).verify(
+                key.public_bytes(), base64.standard_b64decode(sig["sig"]), signable
             )
-        except (InvalidSignature, ValueError, KeyError):
+        except (InvalidSignature, ValueError, KeyError, TypeError, UnsupportedAlgorithmError):
             continue
         verified.append(key.owner_id)
     if not verified:
         raise CheckpointUnverified(
-            f"no valid signature on checkpoint at tree_size={cp.tree_size}"
+            f"no valid log-key signature on checkpoint at tree_size={cp.tree_size}"
         )
     return verified
 

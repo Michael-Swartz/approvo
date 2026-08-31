@@ -11,6 +11,7 @@ release.
 | [Data models](models.md) | `ApprovalRequest`, `Decision`, `LedgerEntry`, `Checkpoint`, `Record`, `RequestView`, query/paging types |
 | [Stores](stores.md) | The three storage protocols, `Reservation`, and the in-memory reference implementations |
 | [Crypto & keys](crypto.md) | `Signer`, `Ed25519Signer`, `KeyRef`, `KeyDirectory`, DSSE envelope helpers |
+| [Signing back ends](signing.md) | Algorithm registry, `KeyProvider`, `KeyResolver`, `SigningService`, cloud KMS providers |
 | [Policy](policy.md) | `Policy`, `PolicyResult`, `evaluate`, `PolicyStore` |
 | [Ledger internals](ledger.md) | Hash-chain and Merkle primitives, checkpoint build/sign/verify |
 | [Errors](errors.md) | The exception hierarchy and suggested HTTP mapping |
@@ -26,8 +27,14 @@ from approvo import (
     RequestView, RequestQuery, Page, DecisionChallenge,
     PolicyResult, Check, VerificationReport,
     # crypto
-    Ed25519Signer, Signer, KeyRef, KeyDirectory,
-    wrap, unwrap_payload, pae, verify_envelope,
+    Ed25519Signer, Signer, KeyRef, KeyDirectory, PublicKeyMaterial,
+    wrap, wrap_async, unwrap_payload, pae, verify_envelope,
+    verified_signatures, decision_authorized, sign_with, public_key_ref,
+    # signing back ends
+    KeyProvider, InMemoryKeyProvider, LocalFileKeyProvider, EnvKeyProvider,
+    CompositeKeyProvider, KeyDescriptor, parse_key_ref,
+    KeyResolver, StaticKeyResolver, TemplateKeyResolver,
+    SigningContext, SigningPurpose, SigningService, TrustSpec,
     # policy
     Policy, PolicyStore, InMemoryPolicyStore,
     # ledger primitives
@@ -45,12 +52,17 @@ from approvo import (
     ApprovoError, RequestNotFound, SignatureInvalid, PolicyMismatch,
     IdempotencyConflict, LedgerConflict, ConcurrencyExhausted,
     ChallengeExpired, LedgerTampered, VerificationFailed, StoreError,
+    SigningError, KeyProviderError, KeyResolutionError, UnsupportedAlgorithmError,
 )
 from approvo.stores import (
     MemoryEventStore, MemoryProjectionStore, MemoryIdempotencyStore,
 )
 from approvo.testing import (
     EventStoreConformance, ProjectionStoreConformance,
-    IdempotencyStoreConformance,
+    IdempotencyStoreConformance, KeyProviderConformance,
 )
+# optional KMS back ends
+from approvo.providers.gcpkms import GcpKmsKeyProvider   # pip install 'approvo[gcpkms]'
+from approvo.providers.awskms import AwsKmsKeyProvider   # pip install 'approvo[awskms]'
+from approvo.providers.vault import VaultTransitKeyProvider  # pip install 'approvo[vault]'
 ```

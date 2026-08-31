@@ -37,7 +37,7 @@ def pae(payload_type: str, payload: bytes) -> bytes:
 
 
 def wrap(payload: Any, payload_type: str, signers: list) -> dict:
-    """Canonicalize *payload* and sign it with every signer."""
+    """Canonicalize *payload* and sign it with every (synchronous) signer."""
     body = canonical_bytes(payload)
     signable = pae(payload_type, body)
     return {
@@ -45,6 +45,19 @@ def wrap(payload: Any, payload_type: str, signers: list) -> dict:
         "payload": _b64(body),
         "signatures": [{"keyid": s.key_id(), "sig": _b64(s.sign(signable))} for s in signers],
     }
+
+
+async def wrap_async(payload: Any, payload_type: str, signers: list) -> dict:
+    """Like :func:`wrap`, but awaits signers that sign over the network (KMS)."""
+    from .signer import sign_with
+
+    body = canonical_bytes(payload)
+    signable = pae(payload_type, body)
+    signatures = []
+    for s in signers:
+        sig, keyid = await sign_with(s, signable)
+        signatures.append({"keyid": keyid, "sig": _b64(sig)})
+    return {"payloadType": payload_type, "payload": _b64(body), "signatures": signatures}
 
 
 def unwrap_payload(envelope: dict) -> Any:
