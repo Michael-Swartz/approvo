@@ -1,4 +1,4 @@
-"""Run the shipped conformance suite against the in-memory reference stores.
+"""Run the shipped conformance suite against the in-memory test stores.
 
 If you write your own store (Postgres, Mongo, DynamoDB, ...), do exactly
 this in your own test file with your own fixture. See
@@ -9,15 +9,15 @@ from __future__ import annotations
 
 import pytest
 
-from approvo.stores import (
-    MemoryEventStore,
-    MemoryIdempotencyStore,
-    MemoryProjectionStore,
-)
 from approvo.testing import (
     EventStoreConformance,
     IdempotencyStoreConformance,
     ProjectionStoreConformance,
+)
+from tests.memory_stores import (
+    MemoryEventStore,
+    MemoryIdempotencyStore,
+    MemoryProjectionStore,
 )
 
 

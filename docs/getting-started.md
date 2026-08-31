@@ -21,20 +21,102 @@ sign `Decision`s, and anything that needs to trust an approval calls
 
 ## A complete example
 
-`ApprovalService` is async. The stores below are the in-memory reference
-implementations; in production you swap in [your own](storage.md).
+`ApprovalService` is async and needs three stores implementing the
+protocols in `approvo.stores.base`. approvo ships no database adapters —
+see [Storage](storage.md) for the contract. The toy stores below hold
+everything in a dict/list; they exist purely to make this example
+runnable and are **not** something approvo ships or something you should
+deploy — implement the same handful of methods over your own database.
 
 ```python
 import asyncio
 from datetime import datetime, timedelta, timezone
 
 from approvo import (
-    ApprovalService, Ed25519Signer, Identity, InMemoryPolicyStore,
+    ApprovalService, Checkpoint, Ed25519Signer, Identity, InMemoryPolicyStore,
     KeyDirectory, Policy, RequestQuery, to_rfc3339,
 )
-from approvo.stores import (
-    MemoryEventStore, MemoryProjectionStore, MemoryIdempotencyStore,
-)
+from approvo.errors import IdempotencyConflict, LedgerConflict
+from approvo.models import Page
+from approvo.stores.base import Reservation
+
+# --- toy stores, for this example only; see storage.md for the real thing
+
+
+class ToyEventStore:
+    def __init__(self, log_id: str = "default") -> None:
+        self.log_id = log_id
+        self._entries = []
+
+    async def head(self):
+        return self._entries[-1] if self._entries else None
+
+    async def append(self, entry) -> None:
+        if entry.seq != len(self._entries):
+            raise LedgerConflict(f"seq {entry.seq} already taken")
+        self._entries.append(entry)
+
+    async def get_by_seq(self, seq: int):
+        return self._entries[seq] if 0 <= seq < len(self._entries) else None
+
+    async def events_for_request(self, request_id: str):
+        return [e for e in self._entries if e.request_id == request_id]
+
+    async def scan(self, start: int = 0, limit=None):
+        stop = len(self._entries) if limit is None else min(start + limit, len(self._entries))
+        for entry in self._entries[start:stop]:
+            yield entry
+
+    async def leaf_hashes(self, up_to=None):
+        hashes = [e.entry_hash for e in self._entries]
+        return hashes if up_to is None else hashes[:up_to]
+
+    async def latest_checkpoint(self):
+        for entry in reversed(self._entries):
+            if entry.event_type == "checkpoint.published":
+                return Checkpoint.from_dict(entry.payload)
+        return None
+
+
+class ToyProjectionStore:
+    def __init__(self) -> None:
+        self._views = {}
+
+    async def upsert(self, view) -> None:
+        current = self._views.get(view.request_id)
+        if current is not None and current.last_seq > view.last_seq:
+            return
+        self._views[view.request_id] = view
+
+    async def get(self, request_id: str):
+        return self._views.get(request_id)
+
+    async def query(self, query):
+        items = [v for v in self._views.values() if not query.status or v.status in query.status]
+        return Page(items=tuple(items))
+
+    async def clear(self) -> None:
+        self._views.clear()
+
+
+class ToyIdempotencyStore:
+    def __init__(self) -> None:
+        self._data = {}
+
+    async def reserve(self, key: str, fingerprint: str):
+        existing = self._data.get(key)
+        if existing is None:
+            self._data[key] = {"fingerprint": fingerprint, "response": None}
+            return Reservation(won=True, fingerprint=fingerprint)
+        if existing["fingerprint"] != fingerprint:
+            raise IdempotencyConflict(key)
+        return Reservation(won=False, fingerprint=fingerprint, response=existing["response"])
+
+    async def complete(self, key: str, response: dict) -> None:
+        self._data[key]["response"] = response
+
+    async def release(self, key: str) -> None:
+        self._data.pop(key, None)
 
 
 async def main() -> None:
@@ -69,12 +151,12 @@ async def main() -> None:
 
     # 4. the service — inject stores + trust config
     svc = ApprovalService(
-        events=MemoryEventStore(log_id="releases"),
+        events=ToyEventStore(log_id="releases"),
         key_dir=keys,
         identities=identities,
         policy_store=InMemoryPolicyStore([policy]),
-        projections=MemoryProjectionStore(),
-        idempotency=MemoryIdempotencyStore(),
+        projections=ToyProjectionStore(),
+        idempotency=ToyIdempotencyStore(),
         log_signer=log_key,
     )
 

@@ -14,7 +14,7 @@ python -m venv .venv
   an ADR and a strong reason.
 - **No database adapters in this repo** ([ADR-0004](docs/adr/0004-datastore-agnostic.md)).
   Store implementations live in downstream packages; here we only maintain
-  the protocols, the conformance suite, and the in-memory reference.
+  the protocols and the conformance suite.
 - **Wire-format changes are breaking.** If you change what
   `canonical_bytes` produces, what goes into an `entry_hash`, or any
   `to_dict` shape, bump the relevant `schema` string and update the golden

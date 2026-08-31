@@ -18,7 +18,7 @@ from approvo.crypto.keyprovider import InMemoryKeyProvider
 from approvo.crypto.resolver import SigningPurpose, StaticKeyResolver
 from approvo.crypto.signing import SigningService
 from approvo.errors import SignatureInvalid
-from approvo.stores import (
+from tests.memory_stores import (
     MemoryEventStore,
     MemoryIdempotencyStore,
     MemoryProjectionStore,

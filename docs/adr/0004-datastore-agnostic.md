@@ -31,13 +31,21 @@ approvo ships **no database adapters**. It ships:
    `IdempotencyStoreConformance` — that is the executable form of those
    invariants, including concurrency tests (N racing `append`s / `reserve`s
    must yield exactly one winner).
-3. **In-memory reference implementations** in `approvo.stores.memory`, so
-   the library is usable out of the box for tests and small deployments,
-   and so there is a worked example to copy.
 
 You implement the protocols over your database, subclass the conformance
 suites with a fixture yielding a fresh store, and run pytest. Green means
 approvo's guarantees hold on your datastore.
+
+approvo does **not** ship an in-memory reference implementation either.
+Earlier versions did (`approvo.stores.memory`), but a store that is part
+of the public API invites production use it was never hardened for — no
+persistence, no multi-process coordination, silent data loss on restart —
+and every doc example that imported it obscured how little code the
+protocols actually require. The three protocols above are the only
+storage-agnostic surface approvo ships; anything concrete lives either in
+your own codebase or in the test suite that exercises it (see
+[Storage](../storage.md) for a from-scratch worked example, and
+`approvo.stores.base` for the full contract).
 
 ## Consequences
 
@@ -55,3 +63,6 @@ approvo's guarantees hold on your datastore.
   maintain.
 - A community adapter can live in its own package
   (`approvo-postgres`) without the core project owning its lifecycle.
+- Docs and this library's own tests implement the protocols with small,
+  local, dict/list-backed stores where a worked example is useful; those
+  are illustrative code, not something you `import` from `approvo`.

@@ -74,21 +74,60 @@ operator could rewrite history undetected; frequent pins keep it small.
 ## Verifying off your infrastructure
 
 `verify()` runs against any `EventStore`. To check a ledger you pulled out
-of your database as a list of rows, load them into the in-memory store
-without re-chaining and verify:
+of your database as a list of rows, wrap the list in a minimal read-only
+`EventStore` and verify — you don't need your production store's write
+path for this, just enough to satisfy the protocol:
 
 ```python
 from approvo import ApprovalService, InMemoryPolicyStore, KeyDirectory, LedgerEntry
-from approvo.stores import MemoryEventStore
+from approvo.models import Checkpoint
+from approvo.stores.base import EventStore
+
+
+class ListEventStore(EventStore):
+    """Read-only EventStore over a list already in hand. No writes, no locking."""
+
+    def __init__(self, entries: list[LedgerEntry], log_id: str = "default") -> None:
+        self.log_id = log_id
+        self._entries = entries
+
+    async def head(self):
+        return self._entries[-1] if self._entries else None
+
+    async def append(self, entry) -> None:
+        raise NotImplementedError("read-only: this store is for verification only")
+
+    async def get_by_seq(self, seq: int):
+        return self._entries[seq] if 0 <= seq < len(self._entries) else None
+
+    async def events_for_request(self, request_id: str):
+        return [e for e in self._entries if e.request_id == request_id]
+
+    async def scan(self, start: int = 0, limit: int | None = None):
+        stop = len(self._entries) if limit is None else min(start + limit, len(self._entries))
+        for entry in self._entries[start:stop]:
+            yield entry
+
+    async def leaf_hashes(self, up_to: int | None = None):
+        hashes = [e.entry_hash for e in self._entries]
+        return hashes if up_to is None else hashes[:up_to]
+
+    async def latest_checkpoint(self):
+        for entry in reversed(self._entries):
+            if entry.event_type == "checkpoint.published":
+                return Checkpoint.from_dict(entry.payload)
+        return None
+
 
 entries = [LedgerEntry.from_dict(row) for row in exported_rows]
 svc = ApprovalService(
-    events=MemoryEventStore.from_entries(entries, log_id="releases"),
+    events=ListEventStore(entries, log_id="releases"),
     key_dir=KeyDirectory.load("keys-from-out-of-band.json"),
     identities={}, policy_store=InMemoryPolicyStore([]),
 )
 report = await svc.verify(trusted_checkpoint=pinned)
 ```
 
-`from_entries` deliberately skips every integrity check on load — handing
+This deliberately skips every integrity check on load — handing
 `verify()` a tampered ledger is exactly how you find out it is tampered.
+

@@ -38,7 +38,7 @@ import approvo
 print(approvo.__version__)
 
 from approvo import ApprovalService, Ed25519Signer, KeyDirectory
-from approvo.stores import MemoryEventStore
+from approvo.stores import EventStore
 ```
 
 If those imports succeed you have everything. Head to

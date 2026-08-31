@@ -1,4 +1,11 @@
-"""In-memory stores. Tests, local development, ephemeral pipelines.
+"""In-memory stores used only by approvo's own test suite.
+
+approvo ships no database adapters and no in-memory reference
+implementation — see ``approvo.stores.base`` for the generic, storage-agnostic
+protocols you implement over your own database. These classes exist purely so
+approvo's tests (including the conformance suite in ``approvo.testing``) have
+something concrete to run against; they are not part of the public API and
+must not be imported from application code.
 
 Implements the full async protocol with an ``asyncio.Lock`` standing in
 for the database's unique constraint. Single-process only — two workers
@@ -10,9 +17,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 
-from ..errors import IdempotencyConflict, LedgerConflict
-from ..models import Checkpoint, LedgerEntry, Page, RequestQuery, RequestView
-from .base import Reservation
+from approvo.errors import IdempotencyConflict, LedgerConflict
+from approvo.models import Checkpoint, LedgerEntry, Page, RequestQuery, RequestView
+from approvo.stores.base import Reservation
 
 
 class MemoryEventStore:
