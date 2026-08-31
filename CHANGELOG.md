@@ -17,9 +17,10 @@ project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - DSSE + Ed25519 signing with a detached ceremony (ADR-0002).
 - Hash-chained ledger and signed Merkle checkpoints with consistency
   verification (ADR-0003).
-- Storage protocols (`EventStore`, `ProjectionStore`, `IdempotencyStore`),
-  in-memory reference implementations, and the `approvo.testing`
-  conformance suite (ADR-0004).
+- Storage protocols (`EventStore`, `ProjectionStore`, `IdempotencyStore`)
+  and the `approvo.testing` conformance suite (ADR-0004). approvo ships no
+  in-memory reference implementation — implement the protocols over your
+  own database.
 - Declarative policy engine (ADR-0005).
 - Canonical JSON (ADR-0006).
 - Reserve-then-complete idempotency (ADR-0007).

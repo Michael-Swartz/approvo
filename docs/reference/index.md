@@ -9,7 +9,7 @@ release.
 |---|---|
 | [ApprovalService](service.md) | The main entry point — requests, decisions, reads, checkpoints, verification |
 | [Data models](models.md) | `ApprovalRequest`, `Decision`, `LedgerEntry`, `Checkpoint`, `Record`, `RequestView`, query/paging types |
-| [Stores](stores.md) | The three storage protocols, `Reservation`, and the in-memory reference implementations |
+| [Stores](stores.md) | The three storage protocols and `Reservation` |
 | [Crypto & keys](crypto.md) | `Signer`, `Ed25519Signer`, `KeyRef`, `KeyDirectory`, DSSE envelope helpers |
 | [Signing back ends](signing.md) | Algorithm registry, `KeyProvider`, `KeyResolver`, `SigningService`, cloud KMS providers |
 | [Policy](policy.md) | `Policy`, `PolicyResult`, `evaluate`, `PolicyStore` |
@@ -60,7 +60,7 @@ from approvo import (
     SigningError, KeyProviderError, KeyResolutionError, UnsupportedAlgorithmError,
 )
 from approvo.stores import (
-    MemoryEventStore, MemoryProjectionStore, MemoryIdempotencyStore,
+    EventStore, ProjectionStore, IdempotencyStore, NullProjectionStore,
 )
 from approvo.testing import (
     EventStoreConformance, ProjectionStoreConformance,

@@ -7,7 +7,7 @@ hash-chained ledger, and verification that re-derives status from scratch.
 Quick start::
 
     from approvo import ApprovalService, Ed25519Signer, KeyDirectory, Policy
-    from approvo.stores import MemoryEventStore, MemoryProjectionStore
+    from approvo.stores import EventStore, ProjectionStore
 
 See https://michael-swartz.github.io/approvo/ for full documentation, and
 :mod:`approvo.stores.base` for the storage contract to implement against

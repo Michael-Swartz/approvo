@@ -1,8 +1,9 @@
-"""Storage protocols and the in-memory reference implementation.
+"""Storage protocols — the generic, database-agnostic contract.
 
-approvo ships no database adapters — see :mod:`approvo.stores.base` for
-the contract you implement, and :mod:`approvo.testing` for the conformance
-suite that proves your implementation satisfies it.
+approvo ships no database adapters and no in-memory reference
+implementation — see :mod:`approvo.stores.base` for the contract you
+implement over your own database, and :mod:`approvo.testing` for the
+conformance suite that proves your implementation satisfies it.
 """
 
 from .base import (
@@ -12,14 +13,10 @@ from .base import (
     ProjectionStore,
     Reservation,
 )
-from .memory import MemoryEventStore, MemoryIdempotencyStore, MemoryProjectionStore
 
 __all__ = [
     "EventStore",
     "IdempotencyStore",
-    "MemoryEventStore",
-    "MemoryIdempotencyStore",
-    "MemoryProjectionStore",
     "NullProjectionStore",
     "ProjectionStore",
     "Reservation",

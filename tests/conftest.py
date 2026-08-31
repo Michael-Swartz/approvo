@@ -11,7 +11,7 @@ from approvo import (
     KeyDirectory,
     Policy,
 )
-from approvo.stores import (
+from tests.memory_stores import (
     MemoryEventStore,
     MemoryIdempotencyStore,
     MemoryProjectionStore,

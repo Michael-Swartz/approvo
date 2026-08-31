@@ -62,16 +62,19 @@ conformance suite ([`approvo.testing`](src/approvo/testing.py)). See
 
 ## Shape of the API
 
+Pseudocode below — `Pg*Store` stand in for your own implementation of the
+three storage protocols; see the runnable example in
+[Getting started](https://michael-swartz.github.io/approvo/getting-started/).
+
 ```python
 from datetime import datetime, timedelta, timezone
 from approvo import (
     ApprovalService, Ed25519Signer, Identity, InMemoryPolicyStore,
     KeyDirectory, Policy, to_rfc3339,
 )
-# in-memory reference stores; in production these are YOUR implementations
-from approvo.stores import (
-    MemoryEventStore, MemoryProjectionStore, MemoryIdempotencyStore,
-)
+# approvo ships no database adapters — implement these three protocols
+# (approvo.stores.base) over your own datastore; see docs/storage.md.
+# from myapp.approvo_stores import PgEventStore, PgProjectionStore, PgIdempotencyStore
 
 now = to_rfc3339(datetime.now(timezone.utc))
 casey, jordan, log_key = (Ed25519Signer.generate() for _ in range(3))
@@ -82,7 +85,7 @@ keys.add(jordan.public_key_ref("user:jordan", not_before=now))
 keys.add(log_key.public_key_ref("log:main", not_before=now, key_use="log"))
 
 svc = ApprovalService(
-    events=MemoryEventStore(log_id="releases"),
+    events=PgEventStore(pg_pool, log_id="releases"),
     key_dir=keys,
     identities={
         "user:casey": Identity("user:casey", ("release-manager",)),
@@ -94,8 +97,8 @@ svc = ApprovalService(
         threshold=2,
         required_subject_fields=("artifact_digest", "version"),
     )]),
-    projections=MemoryProjectionStore(),
-    idempotency=MemoryIdempotencyStore(),
+    projections=PgProjectionStore(pg_pool, log_id="releases"),
+    idempotency=PgIdempotencyStore(pg_pool, log_id="releases"),
     log_signer=log_key,
 )
 

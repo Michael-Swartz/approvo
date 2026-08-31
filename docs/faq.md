@@ -83,8 +83,8 @@ auditable. Keep secrets out of `subject` and `comment` fields.
 
 You don't — run it yourself, on infrastructure the operator doesn't
 control, with a key directory you obtained out of band and a checkpoint
-you pinned. `verify()` works against any `EventStore`, including
-`MemoryEventStore.from_entries(rows)` built from a database dump. See
+you pinned. `verify()` works against any `EventStore`, including a
+minimal read-only one you wrap around rows from a database dump. See
 [Verification](verification.md#verifying-off-your-infrastructure).
 
 ### What's the relationship to in-toto / TUF / Sigstore?
