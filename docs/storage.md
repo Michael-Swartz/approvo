@@ -28,7 +28,10 @@ tenant, team, or environment.
 > the `IdempotencyStore` and in-flight retries might double-append — it's
 > short-lived coordination, not data. One interface would either force
 > every implementer to build idempotency/projection machinery they don't
-> need, or blur which failures actually matter.
+> need, or blur which failures actually matter. See
+> [ADR-0004](adr/0004-datastore-agnostic.md) for the full design rationale
+> and [the conformance suite](#the-conformance-suite) to validate your
+> implementation.
 
 ## `EventStore`
 
