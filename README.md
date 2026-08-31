@@ -43,9 +43,9 @@ approvo never opens a connection, runs a migration, or owns a
 transaction. You implement three small async protocols
 ([`approvo.stores.base`](src/approvo/stores/base.py)) over the database
 you already run, and prove your implementation correct with the shipped
-conformance suite ([`approvo.testing`](src/approvo/testing.py)). There are
-**no bundled database adapters** on purpose — see
-[ADR-0004](docs/adr/0004-datastore-agnostic.md).
+conformance suite ([`approvo.testing`](src/approvo/testing.py)). See
+[docs/storage.md](docs/storage.md) for why it's split into three, and
+[ADR-0004](docs/adr/0004-datastore-agnostic.md) for the full reasoning.
 
 ## The guarantees
 

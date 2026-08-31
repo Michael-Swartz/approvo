@@ -1,8 +1,8 @@
 # Stores
 
-approvo ships no database adapters. You implement these three protocols
-against your datastore and validate with the
-[conformance suite](../storage.md#the-conformance-suite).
+The three storage protocols you implement against your datastore; see
+[Storage](../storage.md) for why there are three and how to validate an
+implementation.
 
 ## Protocols
 
